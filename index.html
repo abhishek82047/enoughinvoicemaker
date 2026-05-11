@@ -838,7 +838,7 @@ function buildHTML() {
       <td style="padding:11px 13px;font-size:13px;color:#111;text-align:right;border-bottom:1px solid #eee;font-family:'DM Mono',monospace;font-weight:600">${c}${fmt(s.rate*s.qty)}</td>
     </tr>`).join('');
 
-  return `<div style="font-family:'DM Sans',sans-serif;color:#1a1a1a;background:#fff;min-height:1115px;display:flex;flex-direction:column;justify-content:space-between">
+  return `<div style="font-family:'DM Sans',sans-serif;color:#1a1a1a;background:#fff;min-height:1125px;display:flex;flex-direction:column;justify-content:space-between">
   <div>
   <div style="padding:32px 36px 20px;display:flex;justify-content:space-between;align-items:flex-start">
     <div>
@@ -948,8 +948,8 @@ function buildHTML() {
       ${bizWeb?` &nbsp;|&nbsp; <a href="${bizWeb.startsWith('http')?bizWeb:'https://'+bizWeb}" style="color:inherit;text-decoration:none">${bizWeb}</a>`:''}
     </div>
     </div>
+    <div style="font-size:8px;color:#666;text-align:center;padding:12px 0 8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:600">This is computer generated invoice</div>
   </div>
-  <div style="font-size:8px;color:#666;text-align:center;padding:12px 0 8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:600">This is computer generated invoice</div>
 </div>`;
 }
 
