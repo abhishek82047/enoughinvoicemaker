@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enough Editor — Invoice Creator</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="images.js"></script>
+<style>
+[data-theme="dark"] {
+  --bg: #0e0e0e;
+  --surface: #161616;
+  --surface2: #1e1e1e;
+  --border: #2a2a2a;
+  --border2: #383838;
+  --accent: #FF7900;
+  --accent2: #FF9100;
+  --text: #f0ede8;
+  --text2: #a09a90;
+  --text3: #6a6460;
+  --danger: #e05a4e;
+  --preview-bg: #111111;
+  --shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+
+[data-theme="light"] {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface2: #fcfaf7;
+  --border: #ece8e2;
+  --border2: #e0d9cf;
+  --accent: #FF7900;
+  --accent2: #FF9100;
+  --text: #1a1714;
+  --text2: #5a534a;
+  --text3: #9a9088;
+  --danger: #c0392b;
+  --preview-bg: #f5f3f0;
+  --shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ── HEADER ── */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 13px 26px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: var(--shadow);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.brand { display: flex; align-items: center; gap: 11px; }
+
+.logo-box {
+  width: 37px; height: 37px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.logo-box img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
+.brand h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 600;
+  color: var(--text); letter-spacing: 0.02em;
+}
+
+.brand .tagline {
+  font-size: 10px; color: var(--text3);
+  letter-spacing: 0.09em; text-transform: uppercase;
+}
+
+.header-actions { display: flex; gap: 8px; align-items: center; }
+
+.theme-toggle {
+  width: 35px; height: 35px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; transition: all 0.2s;
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 15px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; border: none;
+  transition: all 0.2s; letter-spacing: 0.02em; white-space: nowrap;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border2); color: var(--text2);
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-accent { background: var(--accent); color: #fff; font-weight: 600; }
+.btn-accent:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(255,121,0,0.3); }
+
+.btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+.btn-outline:hover { background: rgba(200,169,110,0.1); }
+
+/* ── LAYOUT ── */
+.workspace {
+  display: block;
+  min-height: calc(100vh - 150px);
+}
+
+.editor-panel {
+  padding: 22px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.preview-panel {
+  display: none;
+}
+
+/* ── FOOTER ── */
+.app-footer {
+  background: #111111;
+  padding: 35px 20px;
+  text-align: center;
+  color: var(--accent);
+  border-top: 1px solid #222;
+}
+
+.app-footer .thank-you {
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.app-footer .contact-info {
+  font-size: 13px;
+  color: #555;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 768px) {
+  .app-header { padding: 10px 15px; flex-wrap: wrap; gap: 12px; }
+  .header-actions { width: 100%; justify-content: space-between; overflow-x: auto; padding-bottom: 2px; }
+  .header-actions .btn { padding: 8px 12px; font-size: 12px; flex: 1; justify-content: center; }
+  .header-actions .btn span { display: none; }
+  .app-header .brand h1 { font-size: 16px; }
+  
+  .editor-panel { padding: 15px; }
+  .section { padding: 15px; }
+  .field-row.col3, .field-row.col2 { grid-template-columns: 1fr; }
+  
+  .svc-head { display: none; }
+  .svc-row { 
+    grid-template-columns: 1fr; 
+    gap: 8px; 
+    border: 1px solid var(--border); 
+    padding: 15px; 
+    border-radius: 10px; 
+    position: relative;
+    background: var(--surface);
+  }
+  .svc-row input { text-align: left !important; font-size: 14px; padding: 10px; }
+  .svc-amt { text-align: left; padding: 10px; }
+  .btn-del { 
+    position: absolute; top: -8px; right: -8px; 
+    background: var(--danger); color: white; 
+    border-radius: 50%; width: 28px; height: 28px; 
+    display: flex; align-items: center; justify-content: center; 
+    padding: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 5;
+  }
+  .two-col { grid-template-columns: 1fr; }
+  .t-grand { padding: 15px; }
+  .t-grand .amt { font-size: 20px; }
+}
+
+/* ── SECTIONS ── */
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 17px;
+  margin-bottom: 13px;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.section-title {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 13px; padding-bottom: 9px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── FORM ── */
+.field-row { display: grid; gap: 9px; margin-bottom: 9px; }
+.field-row.col2 { grid-template-columns: 1fr 1fr; }
+.field-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+.field-row.col1 { grid-template-columns: 1fr; }
+
+.field label {
+  display: block;
+  font-size: 10px; font-weight: 600;
+  color: var(--text3);
+  letter-spacing: 0.07em; text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+input, textarea, select {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; padding: 8px 10px;
+  outline: none;
+  transition: border-color 0.2s, background 0.3s, color 0.3s;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(200,169,110,0.12);
+}
+
+textarea { resize: vertical; min-height: 52px; }
+
+/* ── SERVICE ROWS ── */
+.svc-head {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr 0.7fr 1fr 30px;
+  gap: 6px; margin-bottom: 5px; padding: 0 2px;
+}
+.svc-head span {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--text3);
+}
+
+/* KEY FIX: rows are appended as real DOM nodes, never innerHTML'd again */
+.svc-row {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr 0.7fr 1fr 30px;
+  gap: 6px; margin-bottom: 6px;
+  align-items: center;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.svc-row input[type="number"] { text-align: right; }
+
+.svc-amt {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; color: var(--accent);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 7px; padding: 8px 9px;
+  text-align: right;
+  transition: background 0.3s;
+}
+
+.btn-del {
+  background: transparent; border: 1px solid transparent;
+  border-radius: 6px; color: var(--text3);
+  font-size: 17px; line-height: 1;
+  cursor: pointer; padding: 4px 5px;
+  transition: all 0.15s;
+}
+.btn-del:hover { color: #e05a4e; border-color: #e05a4e; background: rgba(224,90,78,0.08); }
+
+.add-svc-btn {
+  width: 100%; margin-top: 9px; padding: 9px;
+  background: transparent; border: 1px dashed var(--border2);
+  border-radius: 7px; color: var(--text3);
+  font-size: 13px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.add-svc-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(200,169,110,0.05); }
+
+/* ── TOTALS ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
+
+.totals-area { margin-top: 13px; border-top: 1px solid var(--border); padding-top: 13px; }
+
+.t-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0; font-size: 13px; color: var(--text2);
+  border-bottom: 1px dashed var(--border);
+}
+.t-row:last-of-type { border-bottom: none; }
+
+.t-grand {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 10px; padding: 11px 14px;
+  background: var(--accent); border-radius: 8px;
+  transition: background 0.3s;
+}
+.t-grand span { font-size: 13px; font-weight: 700; color: #fff; }
+.t-grand .amt { font-family: 'DM Mono', monospace; font-size: 18px; }
+
+/* ── PREVIEW ── */
+.preview-label {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 13px;
+  display: flex; align-items: center; gap: 8px;
+}
+.preview-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+#invoice-preview {
+  background: #fff; border-radius: 10px;
+  overflow: hidden; box-shadow: 0 6px 30px rgba(0,0,0,0.4);
+  min-height: 480px;
+}
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75); z-index: 999;
+  backdrop-filter: blur(6px);
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 14px; padding: 24px;
+  width: 450px; max-width: 95vw;
+  max-height: 85vh; overflow-y: auto;
+  box-shadow: var(--shadow);
+  transition: background 0.3s;
+}
+
+.modal-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.modal-hd h2 { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 600; }
+
+.modal-close {
+  background: none; border: none; color: var(--text3);
+  cursor: pointer; font-size: 19px; padding: 2px 5px;
+  border-radius: 4px; transition: color 0.2s;
+}
+.modal-close:hover { color: var(--text); }
+
+.modal .mfield { margin-bottom: 11px; }
+.modal .mfield label { display: block; font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 4px; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="brand">
+    <div class="logo-box" id="hdr-init">
+      <img src="favicon.png" alt="Logo">
+    </div>
+    <div>
+      <h1 id="hdr-name">Enough Editor</h1>
+      <div class="tagline">Invoice Creator</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="Toggle Light/Dark">☀️</button>
+    <button class="btn btn-ghost" onclick="openSettings()">⚙ Settings</button>
+    <button class="btn btn-outline" onclick="openPreviewModal()">👁 Preview</button>
+    <button class="btn btn-accent" onclick="downloadInvoice()">↓ Download PDF</button>
+  </div>
+</header>
+
+<!-- WORKSPACE -->
+<div class="workspace">
+
+  <!-- SUGGESTIONS -->
+<datalist id="svc-suggestions">
+  <option value="Graphic Design">
+  <option value="Web Development">
+  <option value="UI/UX Design">
+  <option value="Logo Design">
+  <option value="Branding & Identity">
+  <option value="SEO Optimization">
+  <option value="Content Writing">
+  <option value="Social Media Management">
+  <option value="Video Editing">
+  <option value="App Development">
+</datalist>
+  <div class="editor-panel">
+
+    <!-- Invoice Meta -->
+    <div class="section">
+      <div class="section-title">Invoice Details</div>
+      <div class="field-row col3">
+        <div class="field"><label>Invoice No.</label>
+          <input id="inv-no" type="text" value="INV-001" oninput="qPreview()"></div>
+        <div class="field"><label>Date</label>
+          <input id="inv-date" type="date" oninput="qPreview()"></div>
+        <div class="field"><label>Due Date</label>
+          <input id="inv-due" type="date" oninput="qPreview()"></div>
+      </div>
+      <div class="field-row col2">
+        <div class="field"><label>Status</label>
+          <select id="inv-status" onchange="qPreview()">
+            <option value="unpaid">Unpaid</option>
+            <option value="paid">Paid</option>
+            <option value="draft">Draft</option>
+          </select></div>
+        <div class="field"><label>Currency</label>
+          <select id="inv-currency" onchange="recalc()">
+            <option value="₹">₹ INR</option>
+            <option value="$">$ USD</option>
+            <option value="€">€ EUR</option>
+            <option value="£">£ GBP</option>
+          </select></div>
+      </div>
+    </div>
+
+    <!-- Customer -->
+    <div class="section">
+      <div class="section-title">Bill To</div>
+      <div class="field-row col1">
+        <div class="field"><label>Customer / Client Name</label>
+          <input id="cust-name" type="text" placeholder="e.g. Rahul Sharma" list="cust-name-list" oninput="qPreview()" onchange="addToHistory('cust-name', this.value)">
+          <datalist id="cust-name-list"></datalist></div>
+      </div>
+      <div class="field-row col1">
+        <div class="field"><label>Company (optional)</label>
+          <input id="cust-company" type="text" placeholder="e.g. Sharma Enterprises" list="cust-company-list" oninput="qPreview()" onchange="addToHistory('cust-company', this.value)">
+          <datalist id="cust-company-list"></datalist></div>
+      </div>
+      <div class="field-row col2">
+        <div class="field"><label>Email</label>
+          <input id="cust-email" type="email" placeholder="client@email.com" oninput="qPreview()"></div>
+        <div class="field"><label>Phone</label>
+          <input id="cust-phone" type="text" placeholder="+91 99999 99999" oninput="qPreview()"></div>
+      </div>
+      <div class="field-row col1">
+        <div class="field"><label>Address</label>
+          <textarea id="cust-addr" rows="2" placeholder="City, State" oninput="qPreview()"></textarea></div>
+      </div>
+    </div>
+
+    <!-- Services -->
+    <div class="section">
+      <div class="section-title">Services / Items</div>
+      <div class="svc-head">
+        <span>Service / Description</span>
+        <span>Rate</span>
+        <span style="text-align:center">Qty</span>
+        <span style="text-align:right">Total</span>
+        <span></span>
+      </div>
+      <!-- Rows appended here as real DOM elements — no innerHTML flicker -->
+      <div id="svc-list"></div>
+      <button class="add-svc-btn" onclick="addService()">+ Add Service / Item</button>
+
+      <div class="two-col">
+        <div class="field"><label>Tax / GST (%)</label>
+          <input id="tax-pct" type="number" value="0" min="0" max="100" placeholder="0" oninput="recalc()"></div>
+        <div class="field"><label>Discount (%)</label>
+          <input id="disc-pct" type="number" value="0" min="0" max="100" placeholder="0" oninput="recalc()"></div>
+      </div>
+
+      <div class="totals-area">
+        <div class="t-row"><span>Subtotal</span>
+          <span id="t-sub" style="font-family:'DM Mono',monospace">₹0.00</span></div>
+        <div class="t-row"><span>Discount</span>
+          <span id="t-disc" style="font-family:'DM Mono',monospace;color:#e05a4e">−₹0.00</span></div>
+        <div class="t-row"><span>Tax / GST</span>
+          <span id="t-tax" style="font-family:'DM Mono',monospace">+₹0.00</span></div>
+        <div class="t-grand">
+          <span>Grand Total</span>
+          <span class="amt" id="t-grand">₹0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="section">
+      <div class="section-title">Notes & Terms</div>
+      <div class="field-row col1">
+        <div class="field"><label>Notes / Message</label>
+          <textarea id="inv-notes" rows="2" placeholder="Thank you for your business!" oninput="qPreview()"></textarea></div>
+      </div>
+      <div class="field-row col1">
+        <div class="field"><label>Payment Info</label>
+          <input id="inv-terms" type="text" placeholder="UPI / Bank details" oninput="qPreview()"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:9px;margin-bottom:22px">
+      <button class="btn btn-accent" style="flex:1;justify-content:center" onclick="downloadInvoice()">↓ Download PDF</button>
+      <button class="btn btn-outline" onclick="openPreviewModal()">Full Preview</button>
+    </div>
+
+  </div><!-- /editor -->
+
+</div><!-- /workspace -->
+
+<!-- FOOTER -->
+<footer class="app-footer">
+  <div class="thank-you" id="footer-thanks">Thank you for choosing Enough Editor!</div>
+  <div class="contact-info">
+    <span id="footer-ig">@enougheditor</span> &nbsp;|&nbsp; <span id="footer-mail">enougheditor31@gmail.com</span>
+  </div>
+</footer>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-hd">
+      <h2>⚙ Business Settings</h2>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="mfield"><label>Business Name</label>
+      <input id="biz-name" value="Enough Editor" oninput="syncHeader();qPreview()"></div>
+    <div class="mfield"><label>Logo Initial (1–2 chars)</label>
+      <input id="biz-init" value="E" maxlength="2" oninput="syncHeader();qPreview()"></div>
+    <div class="mfield"><label>Address</label>
+      <input id="biz-addr" value="Gwalior, M.P" oninput="qPreview()"></div>
+    <div class="mfield"><label>Email</label>
+      <input id="biz-email" value="enougheditor31@gmail.com" oninput="qPreview()"></div>
+    <div class="mfield"><label>Phone</label>
+      <input id="biz-phone" placeholder="+91 XXXXX XXXXX" oninput="qPreview()"></div>
+    <div class="mfield"><label>Instagram</label>
+      <input id="biz-ig" value="@enougheditor" oninput="qPreview()"></div>
+    <div class="mfield"><label>UPI ID (for payments)</label>
+      <input id="biz-upi" value="enougheditor@ybl" oninput="qPreview()"></div>
+    <div class="mfield"><label>Website (optional)</label>
+      <input id="biz-web" placeholder="www.yoursite.com" oninput="qPreview()"></div>
+    <div class="mfield"><label>Footer Message</label>
+      <input id="biz-footer" value="Thank you for choosing Enough Editor!" oninput="qPreview()"></div>
+    <button class="btn btn-accent" style="width:100%;justify-content:center;margin-top:8px" onclick="closeSettings()">Save & Close</button>
+  </div>
+</div>
+
+<!-- PREVIEW MODAL -->
+<div class="modal-overlay" id="prev-modal" style="overflow-y:auto;padding:20px;align-items:flex-start">
+  <div style="width:740px;max-width:96vw;margin:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:13px">
+      <span style="color:var(--text3);font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase">Full Preview</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-accent" onclick="downloadInvoice()">↓ Download PDF</button>
+        <button class="btn btn-ghost" onclick="closePrevModal()">✕ Close</button>
+      </div>
+    </div>
+    <div id="prev-body" style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.5)"></div>
+  </div>
+</div>
+
+<script>
+// ═══ STATE ═══
+let services = [];
+let sid = 0;
+let previewTimer = null;
+let isDark = true;
+let imageCache = { logo: '', qr: '' };
+
+// ═══ INIT ═══
+window.onload = () => {
+  loadSettings();
+  loadHistory();
+  const today = new Date().toISOString().split('T')[0];
+  if(!document.getElementById('inv-date').value) document.getElementById('inv-date').value = today;
+  if(!document.getElementById('inv-due').value) document.getElementById('inv-due').value  = new Date(Date.now()+7*864e5).toISOString().split('T')[0];
+  addService();
+  renderPreview();
+  syncHeader();
+};
+
+// No longer need loadImagesAsDataURLs as they are in images.js
+
+// ═══ PERSISTENCE ═══
+function saveSettings() {
+  const fields = ['biz-name','biz-addr','biz-email','biz-phone','biz-ig','biz-web','biz-upi','biz-footer'];
+  const data = {};
+  fields.forEach(f => data[f] = document.getElementById(f).value);
+  localStorage.setItem('enough_invoice_settings', JSON.stringify(data));
+}
+
+function loadSettings() {
+  const saved = localStorage.getItem('enough_invoice_settings');
+  if (saved) {
+    const data = JSON.parse(saved);
+    Object.keys(data).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = data[id];
+    });
+    syncHeader();
+  } else {
+    // Default values if nothing saved
+    document.getElementById('biz-web').value = 'https://portfolio-ee.vercel.app/';
+  }
+}
+
+// ═══ HISTORY ═══
+function addToHistory(type, val) {
+  if (!val) return;
+  const key = `enough_history_${type}`;
+  let history = JSON.parse(localStorage.getItem(key) || '[]');
+  if (!history.includes(val)) {
+    history.push(val);
+    localStorage.setItem(key, JSON.stringify(history.slice(-10))); // Keep last 10
+    loadHistory();
+  }
+}
+
+function loadHistory() {
+  ['cust-name', 'cust-company'].forEach(type => {
+    const list = document.getElementById(`${type}-list`);
+    const history = JSON.parse(localStorage.getItem(`enough_history_${type}`) || '[]');
+    if (list) {
+      list.innerHTML = history.map(h => `<option value="${h}">`).join('');
+    }
+  });
+}
+
+// ═══ THEME ═══
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = isDark ? '☀️' : '🌙';
+}
+
+// ═══ SYNC HEADER ═══
+function syncHeader() {
+  document.getElementById('hdr-name').textContent = g('biz-name') || 'Enough Editor';
+  const footThanks = g('biz-footer') || 'Thank you for choosing Enough Editor!';
+  const footIg = g('biz-ig') || '@enougheditor';
+  const footMail = g('biz-email') || 'enougheditor31@gmail.com';
+  
+  if(document.getElementById('footer-thanks')) document.getElementById('footer-thanks').textContent = footThanks;
+  if(document.getElementById('footer-ig')) document.getElementById('footer-ig').textContent = footIg;
+  if(document.getElementById('footer-mail')) document.getElementById('footer-mail').textContent = footMail;
+  
+  // Update header logo if cached
+  const hdrLogo = document.querySelector('#hdr-init img');
+  if (hdrLogo && typeof LOGO_B64 !== 'undefined') hdrLogo.src = LOGO_B64;
+
+  saveSettings();
+}
+
+// ═══ HELPERS ═══
+function g(id) { const e = document.getElementById(id); return e ? e.value.trim() : ''; }
+function gv(id) { const e = document.getElementById(id); return e ? e.value : ''; }
+function fmt(n) { return Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function cr()   { return g('inv-currency') || '₹'; }
+
+// ═══ DEBOUNCED PREVIEW ═══
+function qPreview() {
+  saveSettings();
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(renderPreview, 280);
+}
+
+// ═══ ADD SERVICE — appends real DOM, NO innerHTML re-render on typing ═══
+function addService() {
+  const id = ++sid;
+  services.push({ id, name:'', rate:0, qty:1 });
+
+  const row = document.createElement('div');
+  row.className = 'svc-row';
+  row.id = `srow-${id}`;
+
+  // Name input
+  const nameIn = document.createElement('input');
+  nameIn.type = 'text';
+  nameIn.placeholder = 'Service name';
+  nameIn.id = `sn-${id}`;
+  nameIn.setAttribute('list', 'svc-suggestions');
+  nameIn.addEventListener('input', () => {
+    const s = services.find(x=>x.id===id);
+    if(s) s.name = nameIn.value;
+    qPreview();
+  });
+
+  // Rate input
+  const rateIn = document.createElement('input');
+  rateIn.type = 'number';
+  rateIn.placeholder = '0.00';
+  rateIn.min = '0';
+  rateIn.id = `sr-${id}`;
+  rateIn.value = '0';
+  rateIn.style.textAlign = 'right';
+  rateIn.addEventListener('input', () => onNum(id));
+
+  // Qty input
+  const qtyIn = document.createElement('input');
+  qtyIn.type = 'number';
+  qtyIn.placeholder = '1';
+  qtyIn.min = '0';
+  qtyIn.step = '0.5';
+  qtyIn.id = `sq-${id}`;
+  qtyIn.value = '1';
+  qtyIn.style.textAlign = 'right';
+  qtyIn.addEventListener('input', () => onNum(id));
+
+  // Amount display
+  const amtEl = document.createElement('div');
+  amtEl.className = 'svc-amt';
+  amtEl.id = `sa-${id}`;
+  amtEl.textContent = cr() + '0.00';
+
+  // Delete button
+  const delBtn = document.createElement('button');
+  delBtn.className = 'btn-del';
+  delBtn.title = 'Remove';
+  delBtn.textContent = '×';
+  delBtn.addEventListener('click', () => removeService(id));
+
+  row.append(nameIn, rateIn, qtyIn, amtEl, delBtn);
+  document.getElementById('svc-list').appendChild(row);
+  setTimeout(() => nameIn.focus(), 40);
+}
+
+function onNum(id) {
+  const s = services.find(x=>x.id===id);
+  if (!s) return;
+  s.rate = parseFloat(document.getElementById(`sr-${id}`)?.value) || 0;
+  s.qty  = parseFloat(document.getElementById(`sq-${id}`)?.value) || 0;
+  const el = document.getElementById(`sa-${id}`);
+  if (el) el.textContent = cr() + fmt(s.rate * s.qty);
+  recalc();
+}
+
+function removeService(id) {
+  if (services.length <= 1) return;
+  services = services.filter(s => s.id !== id);
+  document.getElementById(`srow-${id}`)?.remove();
+  recalc();
+  qPreview();
+}
+
+// ═══ RECALC ═══
+function recalc() {
+  const c    = cr();
+  const sub  = services.reduce((s,x)=>s+x.rate*x.qty, 0);
+  const dp   = parseFloat(gv('disc-pct')) || 0;
+  const tp   = parseFloat(gv('tax-pct'))  || 0;
+  const da   = sub * dp / 100;
+  const ta   = (sub-da) * tp / 100;
+  const gd   = sub - da + ta;
+
+  document.getElementById('t-sub').textContent  = c + fmt(sub);
+  document.getElementById('t-disc').textContent = '−' + c + fmt(da);
+  document.getElementById('t-tax').textContent  = '+' + c + fmt(ta);
+  document.getElementById('t-grand').textContent= c + fmt(gd);
+
+  // Update all row amount cells (currency may have changed)
+  services.forEach(s => {
+    const el = document.getElementById(`sa-${s.id}`);
+    if (el) el.textContent = c + fmt(s.rate * s.qty);
+  });
+
+  qPreview();
+}
+
+// ═══ BUILD INVOICE HTML ═══
+function buildHTML() {
+  const c       = cr();
+  const bizName = g('biz-name')   || 'Enough Editor';
+  const bizInit = (g('biz-init')  || 'E').substring(0,2);
+  const bizAddr = g('biz-addr')   || 'Gwalior, M.P';
+  const bizMail = g('biz-email')  || 'enougheditor31@gmail.com';
+  const bizPh   = g('biz-phone');
+  const bizIg   = g('biz-ig')     || '@enougheditor';
+  const bizUpi  = g('biz-upi')    || 'enougheditor@ybl';
+  const bizWeb  = g('biz-web');
+  const bizFoot = g('biz-footer') || 'Thank you for choosing Enough Editor!';
+
+  const invNo   = gv('inv-no')    || 'INV-001';
+  const invDate = gv('inv-date');
+  const invDue  = gv('inv-due');
+  const status  = gv('inv-status')|| 'unpaid';
+  const cName   = g('cust-name')  || '—';
+  const cComp   = g('cust-company');
+  const cMail   = g('cust-email');
+  const cPh     = g('cust-phone');
+  const cAddr   = g('cust-addr');
+  const notes   = g('inv-notes');
+  const terms   = g('inv-terms');
+  const dp      = parseFloat(gv('disc-pct'))||0;
+  const tp      = parseFloat(gv('tax-pct')) ||0;
+
+  const sub = services.reduce((s,x)=>s+x.rate*x.qty,0);
+  const da  = sub*dp/100;
+  const ta  = (sub-da)*tp/100;
+  const gd  = sub-da+ta;
+
+  const sc = { unpaid:['Unpaid','#e05a4e'], paid:['Paid','#4e9e7a'], draft:['Draft','#a09a90'] };
+  const [sLbl, sClr] = sc[status] || sc.unpaid;
+
+  const fd = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+
+  const rows = services.map((s,i) => `
+    <tr style="background:${i%2?'#fafaf8':'#fff'}">
+      <td style="padding:11px 13px;font-size:13px;color:#222;font-weight:500;border-bottom:1px solid #eee">${s.name||'—'}</td>
+      <td style="padding:11px 13px;font-size:13px;color:#444;text-align:center;border-bottom:1px solid #eee;font-family:'DM Mono',monospace">${c}${fmt(s.rate)}</td>
+      <td style="padding:11px 13px;font-size:13px;color:#444;text-align:center;border-bottom:1px solid #eee">${s.qty}</td>
+      <td style="padding:11px 13px;font-size:13px;color:#111;text-align:right;border-bottom:1px solid #eee;font-family:'DM Mono',monospace;font-weight:600">${c}${fmt(s.rate*s.qty)}</td>
+    </tr>`).join('');
+
+  return `<div style="font-family:'DM Sans',sans-serif;color:#1a1a1a;background:#fff;min-height:1115px;display:flex;flex-direction:column;justify-content:space-between">
+  <div>
+  <div style="padding:32px 36px 20px;display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:8px">
+        <div style="width:48px;height:48px;background:#fcfcfc;border:1px solid #eee;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
+          <img src="${(typeof LOGO_B64 !== 'undefined' && LOGO_B64) || 'favicon.png'}" style="width:100%;height:100%;object-fit:cover">
+        </div>
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#1a1a1a">${bizName}</div>
+          <div style="font-size:9px;color:#aaa;letter-spacing:0.1em;text-transform:uppercase">Graphic Designer & Web Developer</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#222;line-height:1.9;margin-top:3px">
+        <div style="display:flex;align-items:center;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="#FF7900"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> ${bizAddr}</div>
+        <a href="mailto:${bizMail}" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="#FF7900"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg> ${bizMail}</a>
+        ${bizPh?`<div style="display:flex;align-items:center;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="#FF7900"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg> ${bizPh}</div>`:''}
+        ${bizIg?`<a href="https://instagram.com/${bizIg.replace('@','')}" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="#FF7900"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8A3.6 3.6 0 0 0 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6A3.6 3.6 0 0 0 16.4 4H7.6m4.4 3.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9m0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5m4.3-.8a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4z"/></svg> ${bizIg}</a>`:''}
+        ${bizWeb?`<a href="${bizWeb.startsWith('http')?bizWeb:'https://'+bizWeb}" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="#FF7900"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 0 1 5.08 16zm2.95-8H5.08a7.987 7.987 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.24 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg> ${bizWeb}</a>`:''}
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div style="display:inline-block;background:#FF7900;color:#ffffff;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;padding:4px 13px;border-radius:20px;margin-bottom:9px">INVOICE</div>
+      <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:#1a1a1a">${invNo}</div>
+      <div style="font-size:11px;color:#888;margin-top:3px">Date: ${fd(invDate)}</div>
+      ${invDue?`<div style="font-size:11px;color:#888;margin-top:2px">Due: ${fd(invDue)}</div>`:''}
+      <div style="margin-top:8px">
+        <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${sClr};background:${sClr}22;border:1px solid ${sClr}55">${sLbl}</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:3px;background:linear-gradient(90deg,#1a1a1a,#FF7900,#1a1a1a);margin:0 36px;border-radius:2px"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:16px 36px;background:#f8f7f5">
+      <div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#888;margin-bottom:4px">Bill To</div>
+        <div style="font-size:14px;font-weight:700;color:#000">${cName}</div>
+        ${cComp?`<div style="font-size:12px;color:#111;font-weight:500;margin-top:2px">${cComp}</div>`:''}
+        
+        <div style="font-size:11px;color:#333;margin-top:5px;display:flex;flex-direction:column;gap:3px">
+          ${cMail?`<div style="display:flex;align-items:center;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="#FF7900"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg> ${cMail}</div>`:''}
+          ${cPh?`<div style="display:flex;align-items:center;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="#FF7900"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg> ${cPh}</div>`:''}
+          ${cAddr?`<div style="display:flex;align-items:flex-start;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="#FF7900" style="margin-top:3px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> <div style="flex:1">${cAddr.replace(/\n/g,'<br>')}</div></div>`:''}
+        </div>
+      </div>
+    <div style="text-align:right">
+      <div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#bbb;margin-bottom:4px">Summary</div>
+      <div style="font-size:11px;color:#888;line-height:1.9">
+        Items: ${services.length}${dp>0?`<br>Discount: ${dp}%`:''}${tp>0?`<br>Tax/GST: ${tp}%`:''}
+      </div>
+      <div style="font-size:21px;font-weight:700;color:#1a1a1a;font-family:'DM Mono',monospace;margin-top:5px">${c}${fmt(gd)}</div>
+    </div>
+  </div>
+
+  <div style="padding:20px 36px 5px">
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:#FF7900">
+          <th style="padding:10px 13px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#ffffff;text-align:left">Service / Description</th>
+          <th style="padding:10px 13px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#ffffff;text-align:center">Rate</th>
+          <th style="padding:10px 13px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#ffffff;text-align:center">Qty</th>
+          <th style="padding:10px 13px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#ffffff;text-align:right">Total</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
+
+  <div style="padding:5px 36px 20px;display:flex;justify-content:space-between;align-items:flex-end">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <div style="width:68px;height:68px;border:1px solid #eee;border-radius:8px;padding:5px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <img src="${(typeof QR_B64 !== 'undefined' && QR_B64) || 'qrcode.jpeg'}" style="width:100%;height:100%;object-fit:contain">
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:700;color:#aaa;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px">Scan to Pay</div>
+        <div style="font-size:11px;font-weight:700;color:#1a1a1a;font-family:'DM Mono',monospace">${bizUpi}</div>
+      </div>
+    </div>
+    <div style="width:265px">
+      <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#666;border-bottom:1px dashed #e5e5e5">
+        <span>Subtotal</span><span style="font-family:'DM Mono',monospace">${c}${fmt(sub)}</span>
+      </div>
+      ${dp>0?`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#666;border-bottom:1px dashed #e5e5e5"><span>Discount (${dp}%)</span><span style="font-family:'DM Mono',monospace;color:#e05a4e">−${c}${fmt(da)}</span></div>`:''}
+      ${tp>0?`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#666;border-bottom:1px dashed #e5e5e5"><span>Tax/GST (${tp}%)</span><span style="font-family:'DM Mono',monospace">+${c}${fmt(ta)}</span></div>`:''}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 13px;background:#FF7900;border-radius:7px;margin-top:8px">
+        <span style="font-size:10px;font-weight:700;color:#ffffff;letter-spacing:0.08em;text-transform:uppercase">Grand Total</span>
+        <span style="font-family:'DM Mono',monospace;font-size:17px;font-weight:700;color:#ffffff">${c}${fmt(gd)}</span>
+      </div>
+    </div>
+  </div>
+
+  ${(notes||terms)?`<div style="margin:0 36px 18px;padding:13px;background:#f8f7f5;border-radius:8px;border-left:3px solid #FF7900">
+    ${notes?`<div style="font-size:9px;font-weight:700;color:#aaa;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px">Notes</div>
+    <div style="font-size:12px;color:#555;line-height:1.7">${notes}</div>`:''}
+    ${terms?`<div style="font-size:9px;font-weight:700;color:#aaa;letter-spacing:0.08em;text-transform:uppercase;margin-top:${notes?'9px':'0'};margin-bottom:4px">Payment Info</div>
+    <div style="font-size:12px;color:#555;font-family:'DM Mono',monospace">${terms}</div>`:''}
+  </div>`:''}
+  </div>
+
+  <div>
+  <div style="background:#FF7900;padding:16px 36px;text-align:center">
+    <div style="font-size:12px;color:#ffffff;font-weight:700;margin-bottom:3px">${bizFoot}</div>
+    <div style="font-size:10px;color:#ffffff;font-weight:500;letter-spacing:0.05em">${bizIg} &nbsp;|&nbsp; ${bizMail}${bizWeb?` &nbsp;|&nbsp; ${bizWeb}`:''}</div>
+    </div>
+  </div>
+  <div style="font-size:8px;color:#666;text-align:center;padding:12px 0 8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:600">This is computer generated invoice</div>
+</div>`;
+}
+
+// ═══ RENDER ═══
+function renderPreview() {
+  const el = document.getElementById('invoice-preview');
+  if (el) el.innerHTML = buildHTML();
+  // update sidebar totals silently
+  const c   = cr();
+  const sub = services.reduce((s,x)=>s+x.rate*x.qty,0);
+  const dp  = parseFloat(gv('disc-pct'))||0;
+  const tp  = parseFloat(gv('tax-pct')) ||0;
+  const da  = sub*dp/100;
+  const ta  = (sub-da)*tp/100;
+  document.getElementById('t-sub').textContent  = c+fmt(sub);
+  document.getElementById('t-disc').textContent = '−'+c+fmt(da);
+  document.getElementById('t-tax').textContent  = '+'+c+fmt(ta);
+  document.getElementById('t-grand').textContent= c+fmt(sub-da+ta);
+  services.forEach(s=>{ const e=document.getElementById(`sa-${s.id}`); if(e) e.textContent=c+fmt(s.rate*s.qty); });
+}
+
+// ═══ MODALS ═══
+function openSettings()  { document.getElementById('settings-modal').classList.add('open'); }
+function closeSettings() { 
+  saveSettings();
+  document.getElementById('settings-modal').classList.remove('open'); 
+  renderPreview(); 
+}
+function openPreviewModal() {
+  document.getElementById('prev-body').innerHTML = buildHTML();
+  document.getElementById('prev-modal').classList.add('open');
+}
+function closePrevModal() { document.getElementById('prev-modal').classList.remove('open'); }
+
+document.getElementById('settings-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeSettings(); });
+document.getElementById('prev-modal').addEventListener('click',    e => { if(e.target===e.currentTarget) closePrevModal(); });
+
+// ═══ FILE NAME ═══
+function getFileName() {
+  const sn   = services.map(s=>s.name).filter(Boolean).slice(0,2).join('_').replace(/\s+/g,'-').substring(0,20)||'invoice';
+  const date = gv('inv-date').replace(/-/g,'')||new Date().toISOString().split('T')[0].replace(/-/g,'');
+  const no   = gv('inv-no').replace(/[^a-zA-Z0-9]/g,'-')||'INV';
+  return `${sn}_${no}_${date}`;
+}
+
+// ═══ DOWNLOAD PDF ═══
+async function downloadInvoice() {
+  const btns = document.querySelectorAll('.btn-accent');
+  btns.forEach(b => { b.textContent = '⏳ Generating…'; b.disabled = true; });
+  
+  try {
+    const wrap = document.createElement('div');
+    // A4 width at 96 DPI is approx 794px. We'll use 800px for a clean base.
+    wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;background:#fff;padding:0;margin:0;';
+    wrap.innerHTML = buildHTML();
+    document.body.appendChild(wrap);
+
+    // Wait for all images to load
+    const imgs = Array.from(wrap.querySelectorAll('img'));
+    await Promise.all(imgs.map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve; // Continue even if one image fails
+      });
+    }));
+
+    // Small extra delay for rendering stability
+    await new Promise(r => setTimeout(r, 300));
+
+    const canvas = await html2canvas(wrap, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#fff',
+      logging: false,
+      width: 800,
+      windowWidth: 800
+    });
+    
+    document.body.removeChild(wrap);
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    
+    const pw = pdf.internal.pageSize.getWidth();
+    const ph = pdf.internal.pageSize.getHeight();
+    
+    // Calculate height to maintain aspect ratio
+    const ih = (canvas.height * pw) / canvas.width;
+    const imgData = canvas.toDataURL('image/png');
+
+    // If content fits on one page
+    if (ih <= ph) {
+      pdf.addImage(imgData, 'PNG', 0, 0, pw, ih);
+    } else {
+      // Multi-page handling
+      let y = 0;
+      while (y < ih) {
+        if (y > 0) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, -y, pw, ih);
+        y += ph;
+      }
+    }
+
+    pdf.save(getFileName() + '.pdf');
+  } catch (err) {
+    console.error('PDF Generation Error:', err);
+    alert('PDF failed. Please ensure all images are accessible and try again.');
+  } finally {
+    btns.forEach(b => { b.textContent = '↓ Download PDF'; b.disabled = false; });
+  }
+}
+</script>
+</body>
+</html>
