@@ -984,10 +984,10 @@ document.getElementById('prev-modal').addEventListener('click',    e => { if(e.t
 
 // ═══ FILE NAME ═══
 function getFileName() {
-  const sn   = services.map(s=>s.name).filter(Boolean).slice(0,2).join('_').replace(/\s+/g,'-').substring(0,20)||'invoice';
-  const date = gv('inv-date').replace(/-/g,'')||new Date().toISOString().split('T')[0].replace(/-/g,'');
-  const no   = gv('inv-no').replace(/[^a-zA-Z0-9]/g,'-')||'INV';
-  return `${sn}_${no}_${date}`;
+  const custName = g('cust-name').replace(/\s+/g, '-').substring(0, 25) || 'Customer';
+  const invNo    = gv('inv-no').replace(/[^a-zA-Z0-9]/g, '-') || 'INV';
+  const svcName  = services.map(s => s.name).filter(Boolean).slice(0, 1).join('_').replace(/\s+/g, '-').substring(0, 25) || 'Service';
+  return `${custName}_${invNo}_${svcName}`;
 }
 
 // ═══ DOWNLOAD PDF ═══
