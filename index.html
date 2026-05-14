@@ -841,7 +841,7 @@ function buildHTML() {
   const adv = parseFloat(gv('adv-rec'))||0;
   const pend = gd - adv;
 
-  const sc = { unpaid:['Unpaid','#e05a4e'], paid:['Paid','#4e9e7a'], advance:['Advance Paid','#FF7900'], draft:['Draft','#a09a90'] };
+  const sc = { unpaid:['Unpaid','#e05a4e'], paid:['Paid','#4e9e7a'], advance:['Advance Paid','#3498db'], draft:['Draft','#a09a90'] };
   const [sLbl, sClr] = sc[status] || sc.unpaid;
 
   const fd = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
@@ -926,7 +926,7 @@ function buildHTML() {
 
   <div style="padding:5px 36px 20px;display:flex;justify-content:space-between;align-items:flex-end">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-      <div style="width:68px;height:68px;border:1px solid #eee;border-radius:8px;padding:5px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden">
+      <div style="width:85px;height:85px;border:1px solid #eee;border-radius:8px;padding:6px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden">
         <img src="${(typeof QR_B64 !== 'undefined' && QR_B64) || 'qrcode.jpeg'}" style="width:100%;height:100%;object-fit:contain">
       </div>
       <div>
