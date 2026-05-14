@@ -441,6 +441,7 @@ textarea { resize: vertical; min-height: 52px; }
           <select id="inv-status" onchange="qPreview()">
             <option value="unpaid">Unpaid</option>
             <option value="paid">Paid</option>
+            <option value="advance">Advance Paid</option>
             <option value="draft">Draft</option>
           </select></div>
         <div class="field"><label>Currency</label>
@@ -509,6 +510,16 @@ textarea { resize: vertical; min-height: 52px; }
         <div class="t-grand">
           <span>Grand Total</span>
           <span class="amt" id="t-grand">₹0.00</span>
+        </div>
+        <div class="t-row" style="margin-top: 8px; border-bottom: none; border-top: 1px dashed var(--border); padding-top: 8px;">
+          <span>Advance Received</span>
+          <div style="width: 120px;">
+            <input id="adv-rec" type="number" value="0" min="0" placeholder="0.00" oninput="recalc()" style="text-align: right; padding: 4px 8px;">
+          </div>
+        </div>
+        <div class="t-row" style="border-bottom: none; font-weight: 700; color: var(--accent);">
+          <span>Pending Amount</span>
+          <span id="t-pending" style="font-family:'DM Mono',monospace">₹0.00</span>
         </div>
       </div>
     </div>
@@ -775,14 +786,17 @@ function recalc() {
   const sub  = services.reduce((s,x)=>s+x.rate*x.qty, 0);
   const dp   = parseFloat(gv('disc-pct')) || 0;
   const tp   = parseFloat(gv('tax-pct'))  || 0;
+  const adv  = parseFloat(gv('adv-rec'))  || 0;
   const da   = sub * dp / 100;
   const ta   = (sub-da) * tp / 100;
   const gd   = sub - da + ta;
+  const pend = gd - adv;
 
   document.getElementById('t-sub').textContent  = c + fmt(sub);
   document.getElementById('t-disc').textContent = '−' + c + fmt(da);
   document.getElementById('t-tax').textContent  = '+' + c + fmt(ta);
   document.getElementById('t-grand').textContent= c + fmt(gd);
+  document.getElementById('t-pending').textContent = c + fmt(pend);
 
   // Update all row amount cells (currency may have changed)
   services.forEach(s => {
@@ -824,8 +838,10 @@ function buildHTML() {
   const da  = sub*dp/100;
   const ta  = (sub-da)*tp/100;
   const gd  = sub-da+ta;
+  const adv = parseFloat(gv('adv-rec'))||0;
+  const pend = gd - adv;
 
-  const sc = { unpaid:['Unpaid','#e05a4e'], paid:['Paid','#4e9e7a'], draft:['Draft','#a09a90'] };
+  const sc = { unpaid:['Unpaid','#e05a4e'], paid:['Paid','#4e9e7a'], advance:['Advance Paid','#FF7900'], draft:['Draft','#a09a90'] };
   const [sLbl, sClr] = sc[status] || sc.unpaid;
 
   const fd = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
@@ -890,6 +906,7 @@ function buildHTML() {
         Items: ${services.length}${dp>0?`<br>Discount: ${dp}%`:''}${tp>0?`<br>Tax/GST: ${tp}%`:''}
       </div>
       <div style="font-size:21px;font-weight:700;color:#1a1a1a;font-family:'DM Mono',monospace;margin-top:5px">${c}${fmt(gd)}</div>
+      ${adv > 0 ? `<div style="font-size:10px;color:#e05a4e;font-weight:600;margin-top:2px">Pending: ${c}${fmt(pend)}</div>` : ''}
     </div>
   </div>
 
@@ -926,6 +943,12 @@ function buildHTML() {
       <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 13px;background:#FF7900;border-radius:7px;margin-top:8px">
         <span style="font-size:10px;font-weight:700;color:#ffffff;letter-spacing:0.08em;text-transform:uppercase">Grand Total</span>
         <span style="font-family:'DM Mono',monospace;font-size:17px;font-weight:700;color:#ffffff">${c}${fmt(gd)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0 4px;font-size:12px;color:#666;margin-top:5px">
+        <span>Advance Received</span><span style="font-family:'DM Mono',monospace">${c}${fmt(adv)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#1a1a1a;font-weight:700;border-top:1px solid #eee">
+        <span>Pending Amount</span><span style="font-family:'DM Mono',monospace">${c}${fmt(pend)}</span>
       </div>
     </div>
   </div>
@@ -964,10 +987,15 @@ function renderPreview() {
   const tp  = parseFloat(gv('tax-pct')) ||0;
   const da  = sub*dp/100;
   const ta  = (sub-da)*tp/100;
+  const gd  = sub-da+ta;
+  const adv = parseFloat(gv('adv-rec'))||0;
+  const pend = gd - adv;
+  
   document.getElementById('t-sub').textContent  = c+fmt(sub);
   document.getElementById('t-disc').textContent = '−'+c+fmt(da);
   document.getElementById('t-tax').textContent  = '+'+c+fmt(ta);
-  document.getElementById('t-grand').textContent= c+fmt(sub-da+ta);
+  document.getElementById('t-grand').textContent= c+fmt(gd);
+  document.getElementById('t-pending').textContent = c+fmt(pend);
   services.forEach(s=>{ const e=document.getElementById(`sa-${s.id}`); if(e) e.textContent=c+fmt(s.rate*s.qty); });
 }
 
