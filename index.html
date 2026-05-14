@@ -635,6 +635,13 @@ function loadSettings() {
       const el = document.getElementById(id);
       if (el) el.value = data[id];
     });
+
+    // Migrate old portfolio link to new one
+    if (data['biz-web'] === 'https://portfolio-ee.vercel.app/') {
+      data['biz-web'] = 'https://enougheditorportfolio.vercel.app/';
+      document.getElementById('biz-web').value = data['biz-web'];
+      saveSettings();
+    }
     syncHeader();
   } else {
     // Default values if nothing saved
