@@ -906,7 +906,7 @@ function buildHTML() {
         Items: ${services.length}${dp>0?`<br>Discount: ${dp}%`:''}${tp>0?`<br>Tax/GST: ${tp}%`:''}
       </div>
       <div style="font-size:21px;font-weight:700;color:#1a1a1a;font-family:'DM Mono',monospace;margin-top:5px">${c}${fmt(gd)}</div>
-      ${adv > 0 ? `<div style="font-size:10px;color:#e05a4e;font-weight:600;margin-top:2px">Pending: ${c}${fmt(pend)}</div>` : ''}
+      <div style="font-size:10px;color:#e05a4e;font-weight:600;margin-top:2px">Pending: ${c}${fmt(pend)}</div>
     </div>
   </div>
 
@@ -945,9 +945,9 @@ function buildHTML() {
         <span style="font-family:'DM Mono',monospace;font-size:17px;font-weight:700;color:#ffffff">${c}${fmt(gd)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;padding:6px 0 4px;font-size:12px;color:#666;margin-top:5px">
-        <span>Advance Received</span><span style="font-family:'DM Mono',monospace">${c}${fmt(adv)}</span>
+        <span>Advance Received</span><span style="font-family:'DM Mono',monospace">${c}${fmt(adv || 0)}</span>
       </div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#1a1a1a;font-weight:700;border-top:1px solid #eee">
+      <div style="display:flex;justify-content:space-between;padding:8px 10px;font-size:13px;color:#1a1a1a;font-weight:700;border-top:1px solid #eee;background:#fff4e6;border-radius:6px;margin-top:4px">
         <span>Pending Amount</span><span style="font-family:'DM Mono',monospace">${c}${fmt(pend)}</span>
       </div>
     </div>
@@ -1061,16 +1061,16 @@ async function downloadInvoice() {
     const pw = pdf.internal.pageSize.getWidth();
     const ph = pdf.internal.pageSize.getHeight();
     const ih = (canvas.height * pw) / canvas.width;
-    const imgData = canvas.toDataURL('image/png');
+    const imgData = canvas.toDataURL('image/jpeg', 0.7);
 
     // Add Image to PDF
     if (ih <= ph) {
-      pdf.addImage(imgData, 'PNG', 0, 0, pw, ih);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pw, ih, undefined, 'FAST');
     } else {
       let y = 0;
       while (y < ih) {
         if (y > 0) pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, -y, pw, ih);
+        pdf.addImage(imgData, 'JPEG', 0, -y, pw, ih, undefined, 'FAST');
         y += ph;
       }
     }
